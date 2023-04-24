@@ -1,0 +1,4 @@
+
+
+class NotFoundPluginForSettings(KeyError):
+    pass

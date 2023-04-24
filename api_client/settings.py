@@ -3,7 +3,7 @@ from utils import StrictModel
 from yarl import URL
 
 
-class Settings(StrictModel):
+class ClientSettings(StrictModel):
     base_url: AnyUrl
 
     @validator("base_url", pre=True, always=True)

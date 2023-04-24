@@ -11,7 +11,7 @@ class ActionOnUnexpectedStatusCode(enum.Enum):
     EXCEPTION = "exception"
 
 
-class ModelSettings(BaseModel):
+class ValidatorPluginSettings(BaseModel):
     on_200: SubtypeBaseModel | None
     on_201: SubtypeBaseModel | None
     on_204: SubtypeBaseModel | None
@@ -27,10 +27,7 @@ class ModelSettings(BaseModel):
     default: ActionOnUnexpectedStatusCode = ActionOnUnexpectedStatusCode.EXCEPTION
 
 
-class Validator(BasePlugin):
-    def __init__(self, settings) -> None:
-        self._settings = settings
-
+class ValidatorPlugin(BasePlugin):
     def _get_validator_by(self, status_code: int) -> SubtypeBaseModel:
         current_settings = getattr(self._settings, f"on_{status_code}", None)
         if current_settings is None and self._settings.default == ActionOnUnexpectedStatusCode.EXCEPTION:
