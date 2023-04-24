@@ -15,7 +15,6 @@ class HttpMethod(enum.Enum):
     DELETE = "DELETE"
 
 
-
 class Request:
     def __init__(
         self,
@@ -23,7 +22,7 @@ class Request:
         method: HttpMethod,
         headers: Headers | None = None,
         path_params: dict[str, Any] | None = None,
-        body: SubtypeBaseModel | str | None = None,
+        body: str | None = None,
     ) -> None:
         self._endpoint = endpoint
         self._headers = headers
@@ -35,7 +34,7 @@ class Request:
         return self._body
 
     @body.setter
-    def body(self, value):
+    def body(self, value: str):
         self._body = value
 
     @property
@@ -48,7 +47,11 @@ class Request:
 
     @property
     def headers(self) -> Headers:
-        self._merge_headers(self._headers, headers)
+        return self._headers
+
+    @headers.setter
+    def headers(self, value: Headers):
+        self._headers |= value
 
 
 

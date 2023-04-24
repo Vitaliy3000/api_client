@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class CachePluginSettings(BaseModel):
     get_redis_client: Callable[[], str]
     calc_cache_key: Callable[[Any], str]
+    ttl: int
 
 
 class CachePlugin(BasePlugin):
@@ -17,7 +18,7 @@ class CachePlugin(BasePlugin):
         value = await redis_client.get(cache_key)
         if value is None:
             response = await function(*other_function, request=request)
-            redis_client.set(cache_key, response.to_json())
+            redis_client.set(cache_key, response.to_json(), self._settings.ttl)
         else:
             response = Response.from_json(value)
 

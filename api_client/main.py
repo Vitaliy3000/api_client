@@ -1,4 +1,5 @@
 import httpx
+import itertools
 from typing import TypeVar, Any
 import logging
 from api_client.settings import ClientSettings
@@ -58,7 +59,12 @@ class ApiMethod:
 
 
 class Client:
-    def __init__(self, settings: ClientSettings) -> None:
+    def __init__(
+        self,
+        settings: ClientSettings,
+        plugins_settings: list[AnyPluginSettings],
+    ) -> None:
+        self._plugins_settings = plugins_settings
         self._client = httpx.AsyncClient(base_url=settings.base_url)
 
     def build_api_method(
@@ -88,7 +94,7 @@ class Client:
     def _build_plugins(self, plugins_settings: list[AnyPluginSettings]):
         plugins = []
 
-        for settings in plugins_settings:
+        for settings in itertools.chain(self._plugins_settings, plugins_settings):
             try:
                 plugin_cls = SettingsPluginMapper[settings]
             except KeyError:

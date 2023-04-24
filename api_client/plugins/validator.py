@@ -36,7 +36,7 @@ class ValidatorPlugin(BasePlugin):
 
     async def __call__(self, function, *other_function, request: Request) -> Response:
         if self._settings.request_model is not None:
-            request.body = self._settings.request_model.parse_obj(request.body)
+            request.body = self._settings.request_model.parse_obj(request.body).json(exclude_none=True)
 
         response = await function(*other_function, request=request)
         validator = self._get_validator_by(response.status_code)
