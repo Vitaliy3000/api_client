@@ -2,7 +2,7 @@ from api_client.plugins import BasePlugin
 from api_client.models import Response
 import enum
 from pydantic import BaseModel
-from api_client.models import SubtypeBaseModel
+from api_client.models import SubtypeBaseModel, Request, Response
 from api_client.exceptions import UnexpectedStatusCode
 
 
@@ -12,6 +12,7 @@ class ActionOnUnexpectedStatusCode(enum.Enum):
 
 
 class ValidatorPluginSettings(BaseModel):
+    request_model: SubtypeBaseModel | None
     on_200: SubtypeBaseModel | None
     on_201: SubtypeBaseModel | None
     on_204: SubtypeBaseModel | None
@@ -33,8 +34,11 @@ class ValidatorPlugin(BasePlugin):
         if current_settings is None and self._settings.default == ActionOnUnexpectedStatusCode.EXCEPTION:
             raise UnexpectedStatusCode(status_code)
 
-    async def __call__(self, fn, *args, **kwargs):
-        response = await fn(*args, **kwargs)
+    async def __call__(self, function, *other_function, request: Request) -> Response:
+        if self._settings.request_model is not None:
+            request.body = self._settings.request_model.parse_obj(request.body)
+
+        response = await function(*other_function, request=request)
         validator = self._get_validator_by(response.status_code)
         if validator is not None:
             response.parsed_response = validator.parse_raw(self.response.raw_response.text)

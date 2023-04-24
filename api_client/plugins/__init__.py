@@ -11,6 +11,12 @@ SettingsPluginMapper = {
     CachePluginSettings: CachePlugin,
 }
 
+AnyPluginSettings = (
+    ValidatorPluginSettings
+    | RetryPluginSettings
+    | CachePluginSettings
+)
+
 
 __all__ = (
     "BasePlugin",
@@ -23,4 +29,5 @@ __all__ = (
     "cache_key_builder",
     "SettingsPluginMapper",
     "NotFoundPluginForSettings",
+    "AnyPluginSettings",
 )

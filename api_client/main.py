@@ -4,11 +4,8 @@ import logging
 from api_client.settings import ClientSettings
 from pydantic import BaseModel
 from api_client.plugins import BasePlugin, SettingsPluginMapper, NotFoundPluginForSettings
-from api_client.models import SubtypeBaseModel, Response, AnyPluginSettings, HttpMethod
-
-
-Headers = dict[str, str]
-SubtypeBasePlugin = TypeVar("SubtypeBasePlugin", bound=BasePlugin)
+from api_client.models import SubtypeBaseModel, Response, AnyPluginSettings, HttpMethod, Request, Headers
+from api_client.plugins import AnyPluginSettings
 
 
 class ApiMethod:
@@ -18,7 +15,7 @@ class ApiMethod:
         headers: Headers,
         method: HttpMethod,
         path_params: list[str],
-        plugins: list[SubtypeBasePlugin]
+        plugins: list[AnyPluginSettings]
     ) -> None:
         self._client = client
         self._endpoint = endpoint
@@ -27,26 +24,18 @@ class ApiMethod:
         self._path_params = path_params
         self._plugins = plugins
 
-    async def _call(
-        self,
-        headers: Headers | None = None,
-        path_params: dict[str, Any] | None = None,
-        body: SubtypeBaseModel | str | None = None,
-    ) -> Response:
-        if isinstance(body, BaseModel):
-            body = body.json()
-
+    async def _call(self, *, request: Request) -> Response:
         raw_response = await self._client.request(
-            url=self._endpoint.format(**path_params),
-            method=self._method.value,
-            headers=self._merge_headers(self._headers, headers),
-            json=body
+            url=request.endpoint,
+            method=request.method,
+            headers=request.headers,
+            json=request.body
         )
         return Response(raw_response)
-    
+
     @staticmethod
-    async def plugin_initiator(fn, *args, **kwargs):
-        return await fn(*args, **kwargs)
+    async def _plugin_initiator(function, *other_function, request):
+        return await function(*other_function, request=request)
 
     async def __call__(
         self,
@@ -54,12 +43,17 @@ class ApiMethod:
         path_params: dict[str, Any] | None = None,
         body: SubtypeBaseModel | str | None = None,
     ) -> Response:
-        return await self.plugin_initiator(
+        request = Request(
+            endpoint=self._endpoint,
+            path_params=path_params,
+            headers=headers,
+            body=body,
+        )
+
+        return await self._plugin_initiator(
             *self._plugins,
             self._call,
-            body=body,
-            path_params=path_params,
-            headers=headers
+            request=request,
         )
 
 
